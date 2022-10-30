@@ -1,60 +1,62 @@
 //searchInput.value = "ASDASD";
 "use strict";
-
+//Declaration of variable for recieving data from fetch
 let data = [];
+let rawDataCards = [];
+
 window.onload = async function () {
   const options = {
     method: "GET",
-    url: "https://omgvamp-hearthstone-v1.p.rapidapi.com/cards/sets/classic",
+    urlCards:
+      "https://omgvamp-hearthstone-v1.p.rapidapi.com/cards/sets/classic",
+    urlClasses: "https://omgvamp-hearthstone-v1.p.rapidapi.com/info",
     headers: {
       "x-rapidapi-key": "59489fd7femshd11da986701b4cep1b9b50jsn3ce72df24df4",
       "x-rapidapi-host": "omgvamp-hearthstone-v1.p.rapidapi.com",
     },
   };
-  let rawDataClasses = [];
-  await fetch(options.url, options)
+  //***********************************      fetch All Cards    ******************************************
+  await fetch(options.urlCards, options)
     .then((res) => res.json())
-    .then((json) => (rawDataClasses = json))
+    .then((json) => (rawDataCards = json))
     .catch((err) => console.error("error:" + err));
+  //***********************************      fetch All Classes    ******************************************
+  await fetch(options.urlClasses, options)
+    .then((response) => response.json())
+    .then((response) => (data = response))
+    .catch((err) => console.error(err));
+  //******************************************************************************************************
+  //assigning array of classes to data
+  data = data.classes;
 
+  //********************************************************************************
+  // ********************************** FUNCTIONS **********************************
+  //********************************************************************************
+
+  // FILTER. recieves class name and all cards and filter all cards by class name and output it to the HTML
   const filterCardsbyClass = (className, cards) => {
     const newSection = document.createElement("section");
     newSection.class = "allCardsByClass";
     document.body.appendChild(newSection);
     cards.forEach((element) => {
       if (element.playerClass == className && element.img) {
-        console.log("I am here");
         const avatar = document.createElement("img");
         avatar.src = element?.img;
+        newSection.className = "cards";
         newSection.appendChild(avatar);
       }
     });
   };
-
-  data = await fetch(
-    "https://omgvamp-hearthstone-v1.p.rapidapi.com/info",
-    options
-  )
-    .then((response) => response.json())
-    .then((response) => response)
-    .catch((err) => console.error(err));
-
-  //assigning array of classes to data
-  data = data.classes;
-  //**********************************           Declaration          **********************************
-  const inputField = document.getElementById("search1");
-  const picSection = document.getElementById("results");
-  //   const avatar = document.createElement("img");
-  const dontInclude = ["dream"];
-  //**********************************          finish
+  // **********************************    SEARCH INPUT    **********************************
+  // SEARCH. user's input is compared with classes and if match it specific icon/s is/are shown to user
   const searchInput = () => {
     //clear section
-    picSection.innerHTML = "";
+    resultSearch.innerHTML = "";
 
     //comparing data for match
     let result = formatArray(
       data.filter((element) =>
-        element.toLowerCase().includes(inputField.value.toLowerCase())
+        element.toLowerCase().includes(searchField.value.toLowerCase())
       )
     );
 
@@ -62,7 +64,8 @@ window.onload = async function () {
       updateUI(result);
     }
   };
-
+  // **********************************    FORMAT ARRAY    **********************************
+  //FORMAT. take classes array and format it to my needs.
   const formatArray = (classes) => {
     const solution = [];
     classes.forEach((hero, index) => {
@@ -70,25 +73,60 @@ window.onload = async function () {
     });
     return solution;
   };
-  updateUI(data);
-  //********************************         SEARCH TRIGGER
-  inputField.addEventListener("keyup", searchInput);
-
+  // **********************************    SET PICTURES    **********************************
+  //just something extra, to improve readability
+  function setPictures(data, picEl) {
+    picEl.src = `pics/${data}.png`;
+    picEl.height = "90";
+    picEl.id = data;
+  }
+  // **********************************    UPDATE UI     **********************************
+  //recieves data and show all pictures
   function updateUI(data) {
     formatArray(data).forEach((hero) => {
-      console.log(hero);
       if (!dontInclude.includes(hero)) {
         const avatar = document.createElement("img");
+        setPictures(hero, avatar);
+        let selectedClassName = avatar.id[0].toUpperCase() + avatar.id.slice(1);
+        resultSearch.appendChild(avatar);
 
-        avatar.src = `pics/${hero}.png`;
-        avatar.height = "300";
-        avatar.id = hero;   
-        picSection.appendChild(avatar);
         avatar.addEventListener("click", () => {
-          console.log(avatar.id);
-          filterCardsbyClass("Druid", rawDataClasses);
+          resultSearch.innerHTML = "";
+          filterCardsbyClass(selectedClassName, rawDataCards);
         });
       }
     });
   }
+  function updateNav(data) {
+    formatArray(data).forEach((hero) => {
+      if (!dontInclude.includes(hero)) {
+        const avatar = document.createElement("img");
+        setPictures(hero, avatar);
+        let selectedClassName = avatar.id[0].toUpperCase() + avatar.id.slice(1);
+        classSection.appendChild(avatar);
+
+        avatar.addEventListener("click", () => {
+          resultSearch.innerHTML = "";
+          filterCardsbyClass(selectedClassName, rawDataCards);
+        });
+      }
+    });
+  }
+
+  //**********************************           Declaration          **********************************
+  const searchField = document.getElementById("searchCard");
+  const classSection = document.getElementById("classesList");
+  const resultSearch = document.getElementById("results");
+  const dontInclude = [
+    "dream",
+    "neutral",
+    "whizbang",
+    "deathknight",
+    "demonhunter",
+  ];
+
+  updateNav(data);
+
+  //********************************            SEARCH TRIGGER             **********************************
+  searchField.addEventListener("keyup", searchInput);
 };
