@@ -1,9 +1,11 @@
-//searchInput.value = "ASDASD";
 "use strict";
 //Declaration of variable for recieving data from fetch
 let data = [];
 let rawDataCards = [];
-
+let filteredCards = [];
+let cardsData = [];
+let cardsName = [];
+let cardsURL = [];
 window.onload = async function () {
   const options = {
     method: "GET",
@@ -27,35 +29,39 @@ window.onload = async function () {
     .catch((err) => console.error(err));
   //******************************************************************************************************
   //assigning array of classes to data
-  data = data.classes;
-
+  console.log(data);
+  let classes = data.classes;
   //********************************************************************************
   // ********************************** FUNCTIONS **********************************
   //********************************************************************************
 
   // FILTER. recieves class name and all cards and filter all cards by class name and output it to the HTML
   const filterCardsbyClass = (className, cards) => {
-    const newSection = document.createElement("section");
-    newSection.class = "allCardsByClass";
-    document.body.appendChild(newSection);
+    const backBtn = document.createElement("button");
+    backBtn.textContent = "Back";
+    backBtn.id = "backBtn";
+    resultSearch.appendChild(backBtn);
+
     cards.forEach((element) => {
       if (element.playerClass == className && element.img) {
         const avatar = document.createElement("img");
         avatar.src = element?.img;
-        newSection.className = "cards";
-        newSection.appendChild(avatar);
+        //store card names for future search
+        filteredCards.push(element);
+        resultSearch.appendChild(avatar);
       }
     });
+    return filteredCards;
   };
   // **********************************    SEARCH INPUT    **********************************
   // SEARCH. user's input is compared with classes and if match it specific icon/s is/are shown to user
-  const searchInput = () => {
+  const searchInput = (classes) => {
     //clear section
     resultSearch.innerHTML = "";
 
     //comparing data for match
     let result = formatArray(
-      data.filter((element) =>
+      classes.filter((element) =>
         element.toLowerCase().includes(searchField.value.toLowerCase())
       )
     );
@@ -75,39 +81,45 @@ window.onload = async function () {
   };
   // **********************************    SET PICTURES    **********************************
   //just something extra, to improve readability
-  function setPictures(data, picEl) {
-    picEl.src = `pics/${data}.png`;
-    picEl.height = "90";
-    picEl.id = data;
+  function setPictures(classes, picEl, height = 90) {
+    picEl.src = `pics/${classes}.png`;
+    picEl.height = height;
+    picEl.id = classes;
   }
   // **********************************    UPDATE UI     **********************************
   //recieves data and show all pictures
-  function updateUI(data) {
-    formatArray(data).forEach((hero) => {
+  function updateUI(classes) {
+    formatArray(classes).forEach((hero, index) => {
       if (!dontInclude.includes(hero)) {
         const avatar = document.createElement("img");
-        setPictures(hero, avatar);
+        if (classes != filteredCards) setPictures(hero, avatar, 180);
+
         let selectedClassName = avatar.id[0].toUpperCase() + avatar.id.slice(1);
         resultSearch.appendChild(avatar);
 
         avatar.addEventListener("click", () => {
           resultSearch.innerHTML = "";
-          filterCardsbyClass(selectedClassName, rawDataCards);
+          cardsData = filterCardsbyClass(selectedClassName, rawDataCards);
+          cardsData.forEach((card) => {
+            cardsName.push(card.name);
+            cardsURL.push(card.img);
+          });
         });
       }
     });
   }
-  function updateNav(data) {
-    formatArray(data).forEach((hero) => {
+  function updateNav(classes) {
+    formatArray(classes).forEach((hero) => {
       if (!dontInclude.includes(hero)) {
         const avatar = document.createElement("img");
+        avatar.className = "cardsByClass";
         setPictures(hero, avatar);
         let selectedClassName = avatar.id[0].toUpperCase() + avatar.id.slice(1);
         classSection.appendChild(avatar);
 
         avatar.addEventListener("click", () => {
           resultSearch.innerHTML = "";
-          filterCardsbyClass(selectedClassName, rawDataCards);
+          cardsData = filterCardsbyClass(selectedClassName, rawDataCards);
         });
       }
     });
@@ -125,8 +137,10 @@ window.onload = async function () {
     "demonhunter",
   ];
 
-  updateNav(data);
+  updateNav(classes);
 
   //********************************            SEARCH TRIGGER             **********************************
-  searchField.addEventListener("keyup", searchInput);
+  searchField.addEventListener("keyup", function () {
+    searchInput(classes);
+  });
 };
